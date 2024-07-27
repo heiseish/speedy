@@ -13,6 +13,7 @@ description = "A fast binary serialization framework"
 edition = "2018"
 
 [dependencies]
+rust_decimal = { version = "1.35.0", optional = true }
 memoffset = "0.9"
 speedy-derive = { version = "= 0.8.7", path = "speedy-derive", optional = true }
 chrono = { version = "0.4", optional = true }
@@ -35,7 +36,7 @@ panic = "abort"
 members = [".", "speedy-derive", "static-tests"]
 
 [features]
-default = ["speedy-derive"]
+default = ["speedy-derive", "rust_decimal"]
 external_doc = []
 indexmap_v1 = ["dep:indexmap_v1"]
 indexmap_v2 = ["dep:indexmap_v2"]

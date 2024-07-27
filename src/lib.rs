@@ -19,6 +19,9 @@ mod circular_buffer;
 #[cfg(feature = "chrono")]
 mod ext_chrono;
 
+#[cfg(feature = "rust_decimal")]
+mod ext_decimal;
+
 #[cfg(feature = "glam")]
 mod ext_glam;
 
@@ -39,6 +42,7 @@ mod ext_uuid;
 
 #[doc(hidden)]
 pub mod private;
+
 
 #[cfg(feature = "speedy-derive")]
 pub use speedy_derive::{Readable, Writable};
