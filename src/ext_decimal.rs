@@ -1,13 +1,5 @@
-use {
-    crate::{
-        Context,
-        Readable,
-        Reader,
-        Writable,
-        Writer,
-    },
-    rust_decimal::Decimal,
-};
+use crate::{Context, Readable, Reader, Writable, Writer};
+use rust_decimal::Decimal;
 
 // todo: optimize with copy from slice with edianness
 
@@ -29,7 +21,6 @@ where
         16
     }
 }
-
 
 impl<C> Writable<C> for Decimal
 where

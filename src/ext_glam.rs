@@ -1,10 +1,8 @@
-use {
-    crate::{Context, Readable, Reader, Writable, Writer},
-    glam::{
-        Affine2, Affine3A, BVec2, BVec3, BVec4, DAffine2, DAffine3, DMat2, DMat3, DMat4, DQuat,
-        DVec2, DVec3, DVec4, IVec2, IVec3, IVec4, Mat2, Mat3, Mat3A, Mat4, Quat, UVec2, UVec3,
-        UVec4, Vec2, Vec3, Vec3A, Vec4,
-    },
+use crate::{Context, Readable, Reader, Writable, Writer};
+use glam::{
+    Affine2, Affine3A, BVec2, BVec3, BVec4, DAffine2, DAffine3, DMat2, DMat3, DMat4, DQuat, DVec2,
+    DVec3, DVec4, IVec2, IVec3, IVec4, Mat2, Mat3, Mat3A, Mat4, Quat, UVec2, UVec3, UVec4, Vec2,
+    Vec3, Vec3A, Vec4,
 };
 
 macro_rules! impl_for_vec {

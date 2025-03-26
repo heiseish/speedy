@@ -52,7 +52,7 @@ pub use crate::reader::Reader;
 pub use crate::writable::Writable;
 pub use crate::writer::Writer;
 
-pub use crate::context::{BigEndian, Context, DefaultContext, LittleEndian};
+pub use crate::context::{BigEndian, Context, DefaultContext, LittleEndian, NativeContext};
 pub use crate::endianness::Endianness;
 
 pub use crate::error::{Error, IsEof};
@@ -236,7 +236,7 @@ mod tests {
 
         impl io::Read for TestStream {
             fn read(&mut self, output: &mut [u8]) -> Result<usize, io::Error> {
-                if self.position >= self.buffer.len() || output.len() == 0 {
+                if self.position >= self.buffer.len() || output.is_empty() {
                     return Ok(0);
                 }
 
