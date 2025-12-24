@@ -1,3 +1,5 @@
+#![feature(allocator_api)]
+
 #![cfg_attr(feature = "external_doc", doc = include_str!("../README.md"))]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]

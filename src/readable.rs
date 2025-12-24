@@ -1,3 +1,6 @@
+use std::alloc::Allocator;
+#[cfg(feature = "std")]
+use std::alloc::Global;
 #[cfg(feature = "std")]
 use std::io::{
     Read
@@ -289,15 +292,15 @@ impl< 'ctx, 'r, 'a, C: Context > Reader< 'r, C > for CopyingBufferReader< 'ctx, 
 }
 
 #[cfg(feature = "std")]
-struct StreamReader< C: Context, S: Read > {
+struct StreamReader< C: Context, S: Read, A: Allocator + Copy = Global> {
     context: C,
     reader: S,
-    buffer: CircularBuffer,
+    buffer: CircularBuffer<A>,
     is_buffering: bool
 }
 
 #[cfg(feature = "std")]
-impl< 'a, C, S > StreamReader< C, S > where C: Context, S: Read {
+impl< 'a, C, S, A: Allocator + Copy> StreamReader< C, S, A> where C: Context, S: Read {
     #[inline(never)]
     fn read_bytes_slow( &mut self, mut output: &mut [u8] ) -> Result< (), C::Error > {
         if self.is_buffering && output.len() < self.buffer.capacity() {
@@ -342,7 +345,7 @@ impl< 'a, C, S > StreamReader< C, S > where C: Context, S: Read {
 }
 
 #[cfg(feature = "std")]
-impl< 'a, C: Context, S: Read > Reader< 'a, C > for StreamReader< C, S > {
+impl< 'a, C: Context, S: Read, A: Allocator + Copy> Reader< 'a, C > for StreamReader< C, S, A > {
     #[inline(always)]
     fn read_bytes( &mut self, output: &mut [u8] ) -> Result< (), C::Error > {
         if self.buffer.len() >= output.len() {
@@ -417,6 +420,26 @@ impl< C: Context, S: Read > StreamReader< C, S > {
     }
 }
 
+impl<C: Context, S: Read, A: Allocator + Copy> StreamReader< C, S, A > {
+    #[inline]
+    fn deserialize_in<'a, T: Readable< 'a, C > >( context: C, reader: S, is_buffering: bool, alloc: A ) -> Result< T, C::Error > {
+        let capacity = if is_buffering {
+            8 * 1024
+        } else {
+            0
+        };
+
+        let mut reader = StreamReader {
+            context,
+            reader,
+            buffer: CircularBuffer::with_capacity_in( capacity, alloc ),
+            is_buffering
+        };
+
+        T::read_from( &mut reader )
+    }
+}
+
 pub trait Readable< 'a, C: Context >: Sized {
     fn read_from< R: Reader< 'a, C > >( reader: &mut R ) -> Result< Self, C::Error >;
 
@@ -470,6 +493,10 @@ pub trait Readable< 'a, C: Context >: Sized {
         Self::read_from_stream_unbuffered_with_ctx( Default::default(), stream )
     }
 
+    #[inline]
+    fn read_from_stream_unbuffered_in( stream: impl Read, alloc: impl Allocator + Copy) -> Result< Self, C::Error > where Self: DefaultContext< Context = C >, C: Default {
+        Self::read_from_stream_unbuffered_with_ctx_in( Default::default(), stream, alloc )
+    }
     /// Reads from a given stream with internal buffering.
     ///
     /// This will read more data from the stream than is necessary to deserialize
@@ -537,6 +564,11 @@ pub trait Readable< 'a, C: Context >: Sized {
     #[inline]
     fn read_from_stream_unbuffered_with_ctx< S: Read >( context: C, stream: S ) -> Result< Self, C::Error > {
         StreamReader::deserialize( context, stream, false )
+    }
+
+    #[inline]
+    fn read_from_stream_unbuffered_with_ctx_in< S: Read >( context: C, stream: S, alloc: impl Allocator + Copy) -> Result< Self, C::Error > {
+        StreamReader::deserialize_in( context, stream, false, alloc )
     }
 
     #[cfg(feature = "std")]

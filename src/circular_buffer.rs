@@ -1,15 +1,12 @@
 use {
-    core::{
-        ops::{
-            Range
-        }
-    }
+    core::ops::Range, std::alloc::{Allocator, Global}
 };
 
-pub struct CircularBuffer {
-    buffer: Box< [u8] >,
+pub struct CircularBuffer<A: Allocator + Copy = Global> {
+    buffer: Box< [u8], A>,
     position: usize,
-    length: usize
+    length: usize,
+    alloc: A
 }
 
 #[inline(always)]
@@ -204,13 +201,32 @@ fn test_circular_index_empty() {
     );
 }
 
+impl<A: Allocator + Copy > CircularBuffer<A> {
+    pub fn with_capacity_in( capacity: usize, alloc: A) -> Self {
+        let mut buffer = Vec::with_capacity_in( capacity, alloc );
+        unsafe {
+            buffer.set_len( capacity );
+            if cfg!( debug_assertions ) {
+                std::ptr::write_bytes( buffer.as_mut_ptr(), 0xFF, buffer.len() );
+            }
+        }
+
+        CircularBuffer {
+            buffer: buffer.into_boxed_slice(),
+            position: 0,
+            length: 0,
+            alloc
+        }
+    }
+}
 impl CircularBuffer {
     #[cfg(test)]
     pub fn new() -> Self {
         CircularBuffer {
             buffer: Vec::new().into_boxed_slice(),
             position: 0,
-            length: 0
+            length: 0,
+            alloc: Global
         }
     }
 
@@ -226,10 +242,13 @@ impl CircularBuffer {
         CircularBuffer {
             buffer: buffer.into_boxed_slice(),
             position: 0,
-            length: 0
+            length: 0,
+            alloc: Global
         }
     }
+}
 
+impl<A: Allocator + Copy> CircularBuffer<A> {
     #[cfg(test)]
     pub fn is_empty( &self ) -> bool {
         self.length == 0
@@ -239,7 +258,6 @@ impl CircularBuffer {
     pub fn len( &self ) -> usize {
         self.length
     }
-
     pub fn capacity( &self ) -> usize {
         self.buffer.len()
     }
@@ -263,7 +281,7 @@ impl CircularBuffer {
             return;
         }
 
-        let mut new_buffer = Vec::new();
+        let mut new_buffer = Vec::new_in(self.alloc);
         if !is_exact {
             new_buffer.reserve( new_capacity );
         } else {
